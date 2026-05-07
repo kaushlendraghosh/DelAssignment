@@ -48,7 +48,8 @@ ${tasksText}
 Provide a brief, actionable progress summary (3-5 sentences). Mention:
 1. Overall completion percentage and status
 2. Any overdue or at-risk tasks
-3. Key recommendations for the team`;
+3. Key recommendations for the team
+4. Do not stop in mid give complete response.`;
 
   // If no API key, throw an error
   if (!apiKey || apiKey === 'sk-your-key-here' || apiKey === 'your-gemini-api-key') {
@@ -67,8 +68,8 @@ Provide a brief, actionable progress summary (3-5 sentences). Mention:
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: {
-        maxOutputTokens: 500,
-        temperature: 0.7,
+        maxOutputTokens: 1000,
+        temperature: 0.3,
       }
     });
     return result.response.text().trim();
