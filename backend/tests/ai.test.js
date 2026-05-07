@@ -1,31 +1,32 @@
 const request = require('supertest');
 
-// Mock the openai library
-jest.mock('openai', () => {
-  return jest.fn().mockImplementation(() => {
-    return {
-      chat: {
-        completions: {
-          create: jest.fn().mockImplementation(async (options) => {
-            if (process.env.TEST_OPENAI_ERROR === '429') {
+// Mock the @google/generative-ai library
+jest.mock('@google/generative-ai', () => {
+  return {
+    GoogleGenerativeAI: jest.fn().mockImplementation(() => {
+      return {
+        getGenerativeModel: jest.fn().mockReturnValue({
+          generateContent: jest.fn().mockImplementation(async () => {
+            if (process.env.TEST_GEMINI_ERROR === '429') {
               const error = new Error('You exceeded your current quota');
               error.status = 429;
               throw error;
             }
+            if (process.env.TEST_GEMINI_ERROR === '503') {
+              const error = new Error('503 Service Unavailable: This model is currently experiencing high demand.');
+              error.status = 503;
+              throw error;
+            }
             return {
-              choices: [
-                {
-                  message: {
-                    content: 'This is a mock summary mentioning Test Project Alpha.',
-                  },
-                },
-              ],
+              response: {
+                text: () => 'This is a mock summary mentioning Test Project Alpha.',
+              }
             };
           }),
-        },
-      },
-    };
-  });
+        }),
+      };
+    }),
+  };
 });
 
 jest.mock('../src/database', () => {
@@ -57,8 +58,8 @@ beforeEach(async () => {
   });
   sampleProjectId = res.body.id;
 
-  process.env.OPENAI_API_KEY = 'fake-key-for-testing';
-  delete process.env.TEST_OPENAI_ERROR;
+  process.env.GEMINI_API_KEY = 'fake-key-for-testing';
+  delete process.env.TEST_GEMINI_ERROR;
 });
 
 afterEach(async () => {
@@ -101,8 +102,8 @@ describe('AI Summary', () => {
   });
 
   test('POST /ai/summarize/:id — returns 429 when quota exceeded', async () => {
-
-    process.env.TEST_OPENAI_ERROR = '429';
+    process.env.TEST_GEMINI_ERROR = '429';
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     const res = await request(app).post(
       `/ai/summarize/${sampleProjectId}`
@@ -110,11 +111,27 @@ describe('AI Summary', () => {
 
     expect(res.status).toBe(429);
     expect(res.body.detail).toContain('exhausted or rate limit exceeded');
+    
+    consoleSpy.mockRestore();
+  });
+
+  test('POST /ai/summarize/:id — returns 503 when model has high demand', async () => {
+    process.env.TEST_GEMINI_ERROR = '503';
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    const res = await request(app).post(
+      `/ai/summarize/${sampleProjectId}`
+    );
+
+    expect(res.status).toBe(503);
+    expect(res.body.detail).toContain('high demand');
+    
+    consoleSpy.mockRestore();
   });
 
   test('POST /ai/summarize/:id — returns 503 when missing API key', async () => {
 
-    delete process.env.OPENAI_API_KEY;
+    delete process.env.GEMINI_API_KEY;
 
     const res = await request(app).post(
       `/ai/summarize/${sampleProjectId}`

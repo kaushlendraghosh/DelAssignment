@@ -1,8 +1,8 @@
-const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 
 async function generateProjectSummary(project, tasks) {
-  const apiKey = process.env.OPENAI_API_KEY || '';
+  const apiKey = process.env.GEMINI_API_KEY || '';
 
   // Build task descriptions
   const taskLines = [];
@@ -51,36 +51,40 @@ Provide a brief, actionable progress summary (3-5 sentences). Mention:
 3. Key recommendations for the team`;
 
   // If no API key, throw an error
-  if (!apiKey || apiKey === 'sk-your-key-here') {
-    const error = new Error('OpenAI API key not configured.');
+  if (!apiKey || apiKey === 'sk-your-key-here' || apiKey === 'your-gemini-api-key') {
+    const error = new Error('Gemini API key not configured.');
     error.status = 503;
     throw error;
   }
 
-  // Call OpenAI
-  const client = new OpenAI({ apiKey });
+  const genAI = new GoogleGenerativeAI(apiKey);
   try {
-    const response = await client.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a helpful project management assistant.',
-        },
-        { role: 'user', content: prompt },
-      ],
-      max_tokens: 500,
-      temperature: 0.7,
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      systemInstruction: 'You are a helpful project management assistant.',
     });
-    return response.choices[0].message.content.trim();
+    
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        maxOutputTokens: 500,
+        temperature: 0.7,
+      }
+    });
+    return result.response.text().trim();
   } catch (err) {
-    console.error(`OpenAI API Error: ${err.message}`);
+    console.error(`Gemini API Error: ${err.message}`);
     if (err.status === 429 || err.message.toLowerCase().includes('quota') || err.message.toLowerCase().includes('rate limit')) {
-      const error = new Error('OpenAI API free credit exhausted or rate limit exceeded.');
+      const error = new Error('Gemini API free credit exhausted or rate limit exceeded.');
       error.status = 429;
       throw error;
     }
-    const error = new Error('Failed to generate summary from OpenAI.');
+    if (err.status === 503 || err.message.toLowerCase().includes('high demand') || err.message.toLowerCase().includes('503 service unavailable')) {
+      const error = new Error('This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.');
+      error.status = 503;
+      throw error;
+    }
+    const error = new Error('Failed to generate summary from Gemini.');
     error.status = 500;
     throw error;
   }
