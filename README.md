@@ -10,7 +10,7 @@ TeamBoard is a full-stack task management app where teams can create projects, b
 
 - Node.js (v18 or above)
 - PostgreSQL (v14 or above)
-- An OpenAI API key 
+- A Gemini API key 
 
 ### Step 1 — Clone the repo
 
@@ -28,7 +28,7 @@ Now open `backend/.env` and fill in your actual values:
 
 
 - **DATABASE_URL** — your PostgreSQL connection string
-- **OPENAI_API_KEY** — Your OpenAI API key
+- **GEMINI_API_KEY** — Your Gemini API key
 
 ### Step 3 — Start the backend
 
@@ -70,7 +70,7 @@ Tests use an in-memory SQLite database, so you don't need PostgreSQL running for
 
 ## Architecture Overview
 
-The app follows a pretty standard client-server architecture. The React frontend (served by Vite on port 5173) communicates with the Express backend (port 8000) through REST API calls. The backend handles all the business logic — CRUD operations for projects and tasks, input validation with Joi, and the AI summarization feature. Data is persisted in PostgreSQL using Sequelize as the ORM, and the AI summary feature calls the OpenAI API to generate project progress reports based on task data.
+The app follows a pretty standard client-server architecture. The React frontend (served by Vite on port 5173) communicates with the Express backend (port 8000) through REST API calls. The backend handles all the business logic — CRUD operations for projects and tasks, input validation with Joi, and the AI summarization feature. Data is persisted in PostgreSQL using Sequelize as the ORM, and the AI summary feature calls the Gemini API to generate project progress reports based on task data.
 ---
 
 ## Folder Structure
@@ -90,7 +90,7 @@ DeloitteAssignment/
 │   │   │   ├── tasks.js          # Task CRUD endpoints
 │   │   │   └── ai.js             # AI summary endpoint
 │   │   ├── services/
-│   │   │   └── aiService.js      # OpenAI integration 
+│   │   │   └── aiService.js      # Gemini integration 
 │   │   └── middleware/
 │   │       └── validate.js       # Joi request validation
 │   ├── tests/
@@ -143,7 +143,7 @@ I used AI tools (mainly ChatGPT and GitHub Copilot) as a coding assistant throug
 
 **For boilerplate and setup** — I used AI to speed up the initial setup. Things like setting up the Express server, configuring database models, and writing the basic CRUD route structure. These are patterns I've written before, so using AI here was more about saving time on the repetitive parts rather than learning something new.
 
-**For the AI service integration** — I wrote the core logic for generating the prompt myself, including fetching task data and calculating overdue tasks. I used AI to help with the OpenAI SDK syntax, particularly the chat.completions.create call, to ensure I was using the latest format.
+**For the AI service integration** — I wrote the core logic for generating the prompt myself, including fetching task data and calculating overdue tasks. I used AI to help with the Gemini SDK syntax to ensure I was using the latest format.
 
 **For validation and error handling** — I set up the Joi schemas by referring to what the frontend was already sending, and used AI to double-check edge cases I might have missed (like regex patterns for user names, proper UUID validation on route params).
 
