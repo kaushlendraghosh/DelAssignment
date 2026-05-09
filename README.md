@@ -16,7 +16,7 @@ TeamBoard is a full-stack task management app where teams can create projects, b
 
 ```bash
 git clone <repo-url>
-cd DeloitteAssignment
+cd DelAssignment
 ```
 
 ### Step 2 — Set up environment variables
